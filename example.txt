@@ -1,0 +1,34 @@
+if user_input:
+
+    # Store user message
+    st.session_state["message_history"].append({
+        "role": "user",
+        "content": user_input
+    })
+
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    # Assistant response (STREAMING 🔥)
+    with st.chat_message("assistant"):
+        def stream_generator():
+            for message_chunk, metadata in chatbot.stream(
+            {"messages": [HumanMessage(content=user_input)]},
+            config={"configurable": {"thread_id": "thread_1"}},
+            stream_mode="messages"
+    ):
+        # Fix: content list ho sakti hai, sirf text extract karo
+                if isinstance(message_chunk.content, list):
+                    for block in message_chunk.content:
+                        if isinstance(block, dict) and block.get("type") == "text":
+                            yield block["text"]
+                elif isinstance(message_chunk.content, str) and message_chunk.content:
+                    yield message_chunk.content
+
+    ai_message = st.write_stream(stream_generator())
+
+    # Save AI message
+    st.session_state["message_history"].append({
+        "role": "assistant",
+        "content": ai_message
+    })
